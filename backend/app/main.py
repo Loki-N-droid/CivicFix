@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.auth import router as auth_router
+from app.api.v1.categories import router as categories_router
+from app.api.v1.issues import router as issues_router
 
 app = FastAPI(title="CivicFix API", version="0.1.0")
 
@@ -17,6 +19,8 @@ app.add_middleware(
 
 
 app.include_router(auth_router)
+app.include_router(categories_router)
+app.include_router(issues_router)
 
 
 @app.get("/api/v1/health")

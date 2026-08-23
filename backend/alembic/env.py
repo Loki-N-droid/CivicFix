@@ -16,6 +16,9 @@ from app.db.base import Base
 
 # Import all models here so Alembic's autogenerate can detect them
 from app.models.user import User  # noqa: F401
+from app.models.category import IssueCategory  # noqa: F401
+from app.models.issue import Issue  # noqa: F401
+from app.models.issue_history import IssueStatusHistory  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
