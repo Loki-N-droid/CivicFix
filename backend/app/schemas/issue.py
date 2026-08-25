@@ -15,6 +15,18 @@ class IssueCreateRequest(BaseModel):
     address: str | None = None
 
 
+class IssueImageResponse(BaseModel):
+    id: int
+    filename: str
+    original_filename: str
+    mime_type: str
+    size_bytes: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 class IssueResponse(BaseModel):
     id: int
     title: str
@@ -34,6 +46,7 @@ class IssueResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     resolved_at: datetime | None
+    images: list[IssueImageResponse] = []
 
     class Config:
         from_attributes = True

@@ -80,3 +80,9 @@ class Issue(Base):
         order_by="IssueStatusHistory.created_at",
         cascade="all, delete-orphan",
     )
+
+    images: Mapped[list["IssueImage"]] = relationship(
+        "IssueImage",
+        order_by="IssueImage.created_at",
+        cascade="all, delete-orphan",
+    )

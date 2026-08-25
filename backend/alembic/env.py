@@ -19,6 +19,7 @@ from app.models.user import User  # noqa: F401
 from app.models.category import IssueCategory  # noqa: F401
 from app.models.issue import Issue  # noqa: F401
 from app.models.issue_history import IssueStatusHistory  # noqa: F401
+from app.models.image import IssueImage  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
