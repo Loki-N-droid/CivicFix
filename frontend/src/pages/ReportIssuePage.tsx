@@ -45,8 +45,9 @@ function imageError(files: File[]): string | null {
 export default function ReportIssuePage() {
   const [images, setImages] = useState<File[]>([])
   const [imageMessage, setImageMessage] = useState<string | null>(null)
-  const [submitMessage, setSubmitMessage] = useState<string | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [successIssueId, setSuccessIssueId] = useState<number | null>(null)
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false)
   const [flyToKey, setFlyToKey] = useState(0)
   const { status, coords, message: geoMessage, requestLocation } = useGeolocation()
 
@@ -64,6 +65,7 @@ export default function ReportIssuePage() {
     handleSubmit,
     setValue,
     watch,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<ReportIssueForm>({
     resolver: zodResolver(reportIssueSchema),
@@ -99,8 +101,22 @@ export default function ReportIssuePage() {
     setImages(error ? [] : next)
   }
 
+  function handleSuccessDialogClose() {
+    setShowSuccessDialog(false)
+    setSuccessIssueId(null)
+    setSubmitError(null)
+    setImageMessage(null)
+    setImages([])
+    reset({
+      title: '',
+      description: '',
+      citizen_severity: 'medium',
+      address: '',
+    })
+    setFlyToKey((key) => key + 1)
+  }
+
   async function onSubmit(values: ReportIssueForm) {
-    setSubmitMessage(null)
     setSubmitError(null)
 
     const error = imageError(images)
@@ -120,7 +136,8 @@ export default function ReportIssuePage() {
         address: values.address?.trim() || null,
         images,
       })
-      setSubmitMessage(`Issue #${issue.id} submitted. Location saved with the report.`)
+      setSuccessIssueId(issue.id)
+      setShowSuccessDialog(true)
     } catch (err) {
       if (isAxiosError(err) && err.response?.status === 401) {
         setSubmitError('You need to be signed in to submit a report.')
@@ -298,7 +315,6 @@ export default function ReportIssuePage() {
           </div>
 
           {submitError ? <p className="text-sm text-red-600">{submitError}</p> : null}
-          {submitMessage ? <p className="text-sm text-green-700">{submitMessage}</p> : null}
 
           <button
             type="submit"
@@ -309,6 +325,46 @@ export default function ReportIssuePage() {
           </button>
         </form>
       </div>
+
+      {showSuccessDialog ? (
+        <div
+          className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-950/50 px-4 backdrop-blur-sm"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              handleSuccessDialogClose()
+            }
+          }}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="issue-success-title"
+            aria-describedby="issue-success-description"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-2xl text-green-700">
+              ✓
+            </div>
+            <h2 id="issue-success-title" className="mt-4 text-xl font-bold text-slate-900">
+              Issue submitted successfully!
+            </h2>
+            <p id="issue-success-description" className="mt-2 text-sm leading-6 text-slate-600">
+              {successIssueId !== null
+                ? `Your issue #${successIssueId} has been registered successfully.`
+                : 'Your issue has been registered successfully.'}
+            </p>
+            <button
+              type="button"
+              autoFocus
+              onClick={handleSuccessDialogClose}
+              className="mt-6 w-full rounded-lg bg-slate-900 py-2.5 font-medium text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
