@@ -15,6 +15,14 @@ class IssueCreateRequest(BaseModel):
     address: str | None = None
 
 
+class PriorityOverrideRequest(BaseModel):
+    """Admin-only payload for overriding an issue's displayed priority.
+    Citizens have no route that accepts this schema."""
+
+    priority: PriorityLevel
+    reason: str = Field(min_length=3, max_length=255)
+
+
 class IssueImageResponse(BaseModel):
     id: int
     filename: str

@@ -2,11 +2,22 @@ from fastapi import APIRouter, Depends, UploadFile, File, Form
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, require_admin
 from app.models.user import User
 from app.models.issue import IssueSeverity
-from app.schemas.issue import IssueCreateRequest, IssueResponse, IssueDetailResponse
-from app.services.issue_service import create_issue, get_my_issues, get_issue_for_citizen
+from app.schemas.issue import (
+    IssueCreateRequest,
+    IssueResponse,
+    IssueDetailResponse,
+    PriorityOverrideRequest,
+)
+from app.services.issue_service import (
+    create_issue,
+    get_my_issues,
+    get_issue_for_citizen,
+    get_issue_for_admin,
+    override_priority,
+)
 
 router = APIRouter(prefix="/api/v1/issues", tags=["issues"])
 
@@ -52,3 +63,30 @@ def get_issue_detail(
 ):
     issue = get_issue_for_citizen(db, issue_id=issue_id, citizen_id=current_user.id)
     return issue
+
+
+# --- Admin-only: Smart Priority System (Phase 6) ---
+# Deliberately minimal: just enough for an admin to review an issue's
+# calculated priority and override it, with the reasoning and identity
+# recorded. A full admin dashboard is out of scope for Phase 6.
+
+
+@router.get("/admin/{issue_id}", response_model=IssueDetailResponse)
+def get_issue_detail_admin(
+    issue_id: int,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
+):
+    return get_issue_for_admin(db, issue_id=issue_id)
+
+
+@router.patch("/admin/{issue_id}/priority", response_model=IssueResponse)
+def override_issue_priority(
+    issue_id: int,
+    payload: PriorityOverrideRequest,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
+):
+    """Overrides the displayed priority for an issue. The system-calculated
+    priority_score is never touched — see issue_service.override_priority."""
+    return override_priority(db, issue_id=issue_id, admin_id=admin.id, override=payload)
