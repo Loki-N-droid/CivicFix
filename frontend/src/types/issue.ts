@@ -40,6 +40,35 @@ export type Issue = {
   images: IssueImage[]
 }
 
+export type StatusCount = {
+  status: IssueStatus
+  count: number
+}
+
+export type PriorityCount = {
+  priority: PriorityLevel
+  count: number
+}
+
+export type CategoryCount = {
+  category_id: number
+  category_name: string
+  count: number
+}
+
+export type MonthlyCount = {
+  month: string // "YYYY-MM"
+  count: number
+}
+
+export type DashboardStats = {
+  total_issues: number
+  status_counts: StatusCount[]
+  priority_counts: PriorityCount[]
+  category_counts: CategoryCount[]
+  monthly_trend: MonthlyCount[]
+}
+
 export type CreateIssuePayload = {
   title: string
   description: string

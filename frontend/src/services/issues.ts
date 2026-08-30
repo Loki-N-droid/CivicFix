@@ -1,5 +1,5 @@
 import api from './api'
-import type { CreateIssuePayload, Issue } from '../types/issue'
+import type { CreateIssuePayload, DashboardStats, Issue } from '../types/issue'
 
 export async function createIssue(payload: CreateIssuePayload): Promise<Issue> {
   const form = new FormData()
@@ -20,5 +20,12 @@ export async function createIssue(payload: CreateIssuePayload): Promise<Issue> {
   }
 
   const { data } = await api.post<Issue>('/api/v1/issues/', form)
+  return data
+}
+
+// --- Admin ---
+
+export async function fetchDashboardStats(): Promise<DashboardStats> {
+  const { data } = await api.get<DashboardStats>('/api/v1/issues/admin/stats')
   return data
 }

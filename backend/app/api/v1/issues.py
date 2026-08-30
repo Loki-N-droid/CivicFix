@@ -10,6 +10,7 @@ from app.schemas.issue import (
     IssueResponse,
     IssueDetailResponse,
     PriorityOverrideRequest,
+    DashboardStatsResponse,
 )
 from app.services.issue_service import (
     create_issue,
@@ -17,6 +18,7 @@ from app.services.issue_service import (
     get_issue_for_citizen,
     get_issue_for_admin,
     override_priority,
+    get_dashboard_stats,
 )
 
 router = APIRouter(prefix="/api/v1/issues", tags=["issues"])
@@ -69,6 +71,17 @@ def get_issue_detail(
 # Deliberately minimal: just enough for an admin to review an issue's
 # calculated priority and override it, with the reasoning and identity
 # recorded. A full admin dashboard is out of scope for Phase 6.
+
+
+@router.get("/admin/stats", response_model=DashboardStatsResponse)
+def get_admin_dashboard_stats(
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
+):
+    """Registered before /admin/{issue_id} — FastAPI matches routes in
+    declaration order, and 'stats' would otherwise be swallowed as an
+    issue_id path param and fail int validation."""
+    return get_dashboard_stats(db)
 
 
 @router.get("/admin/{issue_id}", response_model=IssueDetailResponse)

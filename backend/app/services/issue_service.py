@@ -1,7 +1,10 @@
+from datetime import datetime, timezone
+
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, UploadFile, status
 
-from app.models.issue import Issue
+from app.models.issue import Issue, IssueStatus, PriorityLevel
 from app.models.issue_history import IssueStatusHistory
 from app.models.category import IssueCategory
 from app.models.image import IssueImage
@@ -142,3 +145,72 @@ def override_priority(
     db.commit()
     db.refresh(issue)
     return issue
+
+
+def _last_n_month_keys(n: int) -> list[str]:
+    """Returns the last n month keys as 'YYYY-MM' strings, oldest first,
+    ending with the current month. Pure date math — no DB access — so the
+    trend chart always has a fixed, zero-filled x-axis."""
+    now = datetime.now(timezone.utc)
+    keys: list[str] = []
+    year, month = now.year, now.month
+    for _ in range(n):
+        keys.append(f"{year:04d}-{month:02d}")
+        month -= 1
+        if month == 0:
+            month = 12
+            year -= 1
+    return list(reversed(keys))
+
+
+def get_dashboard_stats(db: Session) -> dict:
+    """Admin-only aggregate stats for the dashboard. Every bucket (status,
+    priority, month) is zero-filled for values with no rows, so the frontend
+    can render charts without special-casing missing categories."""
+
+    total_issues = db.query(func.count(Issue.id)).scalar() or 0
+
+    status_rows = dict(
+        db.query(Issue.status, func.count(Issue.id)).group_by(Issue.status).all()
+    )
+    status_counts = [
+        {"status": s, "count": status_rows.get(s, 0)} for s in IssueStatus
+    ]
+
+    priority_rows = dict(
+        db.query(Issue.priority, func.count(Issue.id)).group_by(Issue.priority).all()
+    )
+    priority_counts = [
+        {"priority": p, "count": priority_rows.get(p, 0)} for p in PriorityLevel
+    ]
+
+    category_rows = (
+        db.query(IssueCategory.id, IssueCategory.name, func.count(Issue.id))
+        .outerjoin(Issue, Issue.category_id == IssueCategory.id)
+        .group_by(IssueCategory.id, IssueCategory.name)
+        .order_by(IssueCategory.name)
+        .all()
+    )
+    category_counts = [
+        {"category_id": cid, "category_name": name, "count": count}
+        for cid, name, count in category_rows
+    ]
+
+    # Postgres-specific: to_char formats the timestamp directly in SQL so we
+    # group by month without pulling every row's raw created_at into Python.
+    month_expr = func.to_char(Issue.created_at, "YYYY-MM")
+    monthly_rows = dict(
+        db.query(month_expr, func.count(Issue.id)).group_by(month_expr).all()
+    )
+    monthly_trend = [
+        {"month": key, "count": monthly_rows.get(key, 0)}
+        for key in _last_n_month_keys(6)
+    ]
+
+    return {
+        "total_issues": total_issues,
+        "status_counts": status_counts,
+        "priority_counts": priority_counts,
+        "category_counts": category_counts,
+        "monthly_trend": monthly_trend,
+    }

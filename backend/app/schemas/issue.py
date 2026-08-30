@@ -74,3 +74,35 @@ class IssueStatusHistoryResponse(BaseModel):
 
 class IssueDetailResponse(IssueResponse):
     status_history: list[IssueStatusHistoryResponse] = []
+
+
+# --- Admin dashboard statistics (Phase 7) ---
+
+
+class StatusCount(BaseModel):
+    status: IssueStatus
+    count: int
+
+
+class PriorityCount(BaseModel):
+    priority: PriorityLevel
+    count: int
+
+
+class CategoryCount(BaseModel):
+    category_id: int
+    category_name: str
+    count: int
+
+
+class MonthlyCount(BaseModel):
+    month: str  # "YYYY-MM"
+    count: int
+
+
+class DashboardStatsResponse(BaseModel):
+    total_issues: int
+    status_counts: list[StatusCount]
+    priority_counts: list[PriorityCount]
+    category_counts: list[CategoryCount]
+    monthly_trend: list[MonthlyCount]
