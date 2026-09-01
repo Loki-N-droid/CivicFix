@@ -11,6 +11,7 @@ from app.schemas.issue import (
     IssueCreateRequest,
     IssueResponse,
     IssueDetailResponse,
+    IssueAdminDetailResponse,
     PriorityOverrideRequest,
     DashboardStatsResponse,
     IssueListResponse,
@@ -21,6 +22,7 @@ from app.services.issue_service import (
     get_my_issues,
     get_issue_for_citizen,
     get_issue_for_admin,
+    get_issue_for_admin_detail,
     override_priority,
     get_dashboard_stats,
     list_issues_for_admin,
@@ -120,13 +122,13 @@ def list_issues_admin(
     )
 
 
-@router.get("/admin/{issue_id}", response_model=IssueDetailResponse)
+@router.get("/admin/{issue_id}", response_model=IssueAdminDetailResponse)
 def get_issue_detail_admin(
     issue_id: int,
     db: Session = Depends(get_db),
     admin: User = Depends(require_admin),
 ):
-    return get_issue_for_admin(db, issue_id=issue_id)
+    return get_issue_for_admin_detail(db, issue_id=issue_id)
 
 
 @router.patch("/admin/{issue_id}/priority", response_model=IssueResponse)

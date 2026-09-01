@@ -122,6 +122,23 @@ def get_issue_for_admin(db: Session, issue_id: int) -> Issue:
     return issue
 
 
+def get_issue_for_admin_detail(db: Session, issue_id: int) -> Issue:
+    """Same lookup as get_issue_for_admin, plus category/citizen names
+    attached directly onto the ORM instance so IssueAdminDetailResponse can
+    serialize them with from_attributes — no extra frontend round trip and
+    no need for a category/citizen relationship() on the Issue model."""
+    issue = get_issue_for_admin(db, issue_id)
+
+    category = db.query(IssueCategory).filter(IssueCategory.id == issue.category_id).first()
+    citizen = db.query(User).filter(User.id == issue.citizen_id).first()
+
+    issue.category_name = category.name if category else "Unknown category"
+    issue.citizen_name = citizen.name if citizen else "Unknown citizen"
+    issue.citizen_email = citizen.email if citizen else ""
+
+    return issue
+
+
 def override_priority(
     db: Session,
     issue_id: int,

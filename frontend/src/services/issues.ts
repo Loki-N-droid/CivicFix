@@ -4,6 +4,7 @@ import type {
   CreateIssuePayload,
   DashboardStats,
   Issue,
+  IssueAdminDetail,
   IssueListResponse,
 } from '../types/issue'
 
@@ -42,5 +43,10 @@ export async function fetchAdminIssues(
   const { data } = await api.get<IssueListResponse>('/api/v1/issues/admin/list', {
     params,
   })
+  return data
+}
+
+export async function fetchAdminIssueDetail(issueId: number): Promise<IssueAdminDetail> {
+  const { data } = await api.get<IssueAdminDetail>(`/api/v1/issues/admin/${issueId}`)
   return data
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { isAxiosError } from 'axios'
+import { Link } from 'react-router-dom'
 import { useDebouncedValue } from '../../hooks/useDebouncedValue'
 import { fetchAdminIssues } from '../../services/issues'
 import { fetchCategories } from '../../services/categories'
@@ -288,8 +289,13 @@ export default function AdminIssuesPage() {
                         <td className="px-4 py-3 font-mono text-xs text-slate-400 sm:px-6">
                           #{issue.id}
                         </td>
-                        <td className="px-4 py-3 font-medium text-slate-900 sm:px-6">
-                          {issue.title}
+                        <td className="px-4 py-3 sm:px-6">
+                          <Link
+                            to={`/admin/issues/${issue.id}`}
+                            className="font-medium text-slate-900 hover:text-teal-600"
+                          >
+                            {issue.title}
+                          </Link>
                         </td>
                         <td className="px-4 py-3 text-slate-600 sm:px-6">
                           {issue.category_name}

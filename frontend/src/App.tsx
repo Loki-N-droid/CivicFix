@@ -7,6 +7,7 @@ import RegisterPage from './pages/RegisterPage'
 import ReportIssuePage from './pages/ReportIssuePage'
 import AdminDashboardPage from './pages/admin/AdminDashboardPage'
 import AdminIssuesPage from './pages/admin/AdminIssuesPage'
+import AdminIssueDetailPage from './pages/admin/AdminIssueDetailPage'
 import AdminCategoriesPage from './pages/admin/AdminCategoriesPage'
 
 function App() {
@@ -26,6 +27,7 @@ function App() {
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="dashboard" element={<AdminDashboardPage />} />
             <Route path="issues" element={<AdminIssuesPage />} />
+            <Route path="issues/:id" element={<AdminIssueDetailPage />} />
             <Route path="categories" element={<AdminCategoriesPage />} />
           </Route>
         </Route>

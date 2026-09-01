@@ -119,3 +119,21 @@ export type AdminIssueListParams = {
   page?: number
   page_size?: number
 }
+
+// --- Admin issue detail ---
+
+export type StatusHistoryEntry = {
+  id: number
+  previous_status: IssueStatus | null
+  new_status: IssueStatus
+  remark: string | null
+  updated_by: number | null
+  created_at: string
+}
+
+export type IssueAdminDetail = Issue & {
+  category_name: string
+  citizen_name: string
+  citizen_email: string
+  status_history: StatusHistoryEntry[]
+}

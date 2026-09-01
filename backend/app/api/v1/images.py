@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.core.dependencies import get_current_user
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.models.image import IssueImage
 from app.models.issue import Issue
 from app.services.storage_service import storage_service
@@ -23,11 +23,12 @@ def get_issue_image(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found.")
 
     # Authorization: a citizen may only view images belonging to their own
-    # issue. Admins (checked here rather than a separate route) will get
-    # full access once admin routes exist in Phase 7 — for now this is
-    # citizen-only by design, matching the rest of Phase 3/4 scope.
+    # issue. Admins can view images on any issue — needed for the admin
+    # issue detail page (Phase 7, Package 4).
     issue = db.query(Issue).filter(Issue.id == image.issue_id).first()
-    if not issue or issue.citizen_id != current_user.id:
+    is_owner = issue is not None and issue.citizen_id == current_user.id
+    is_admin = current_user.role == UserRole.admin
+    if not issue or not (is_owner or is_admin):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found.")
 
     file_path = storage_service.get_path(image.filename)

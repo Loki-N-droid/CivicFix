@@ -147,3 +147,17 @@ class IssueListResponse(BaseModel):
     page: int
     page_size: int
     total_pages: int
+
+
+# --- Admin issue details (Phase 7, Package 4) ---
+
+
+class IssueAdminDetailResponse(IssueDetailResponse):
+    """Everything IssueDetailResponse has, plus the resolved names an admin
+    needs without a second lookup. category_name/citizen_name/citizen_email
+    are attached to the Issue instance in issue_service before
+    serialization — see get_issue_for_admin_detail."""
+
+    category_name: str
+    citizen_name: str
+    citizen_email: str
