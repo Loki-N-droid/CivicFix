@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import func
+from sqlalchemy import func, or_, cast, String
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, UploadFile, status
 
@@ -8,7 +8,8 @@ from app.models.issue import Issue, IssueStatus, PriorityLevel
 from app.models.issue_history import IssueStatusHistory
 from app.models.category import IssueCategory
 from app.models.image import IssueImage
-from app.schemas.issue import IssueCreateRequest, PriorityOverrideRequest
+from app.models.user import User
+from app.schemas.issue import IssueCreateRequest, PriorityOverrideRequest, IssueSortOption
 from app.services.priority_service import calculate_priority
 from app.services.storage_service import storage_service
 from app.utils.image_validation import validate_image_file, validate_image_count
@@ -213,4 +214,100 @@ def get_dashboard_stats(db: Session) -> dict:
         "priority_counts": priority_counts,
         "category_counts": category_counts,
         "monthly_trend": monthly_trend,
+    }
+
+
+def list_issues_for_admin(
+    db: Session,
+    search: str | None = None,
+    status_filter: IssueStatus | None = None,
+    category_id: int | None = None,
+    priority: PriorityLevel | None = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
+    sort: IssueSortOption = IssueSortOption.newest,
+    page: int = 1,
+    page_size: int = 20,
+) -> dict:
+    """Admin-only search/filter/sort/pagination over all issues. Category
+    and citizen names are resolved server-side via join so the table row
+    never needs a second round trip or client-side lookup.
+    """
+    query = (
+        db.query(
+            Issue,
+            IssueCategory.name.label("category_name"),
+            User.name.label("citizen_name"),
+        )
+        .join(IssueCategory, Issue.category_id == IssueCategory.id)
+        .join(User, Issue.citizen_id == User.id)
+    )
+
+    if search:
+        term = f"%{search.strip()}%"
+        search_filters = [Issue.title.ilike(term), Issue.description.ilike(term)]
+        # Allow searching by exact numeric issue ID alongside text search.
+        if search.strip().isdigit():
+            search_filters.append(Issue.id == int(search.strip()))
+        else:
+            search_filters.append(cast(Issue.id, String).ilike(term))
+        query = query.filter(or_(*search_filters))
+
+    if status_filter is not None:
+        query = query.filter(Issue.status == status_filter)
+
+    if category_id is not None:
+        query = query.filter(Issue.category_id == category_id)
+
+    if priority is not None:
+        query = query.filter(Issue.priority == priority)
+
+    if date_from is not None:
+        query = query.filter(Issue.created_at >= date_from)
+
+    if date_to is not None:
+        query = query.filter(Issue.created_at <= date_to)
+
+    total = query.count()
+
+    if sort == IssueSortOption.oldest:
+        query = query.order_by(Issue.created_at.asc())
+    elif sort == IssueSortOption.priority_score:
+        query = query.order_by(Issue.priority_score.desc(), Issue.created_at.desc())
+    else:
+        query = query.order_by(Issue.created_at.desc())
+
+    page = max(page, 1)
+    page_size = min(max(page_size, 1), 100)
+    offset = (page - 1) * page_size
+
+    rows = query.offset(offset).limit(page_size).all()
+
+    items = [
+        {
+            "id": issue.id,
+            "title": issue.title,
+            "category_id": issue.category_id,
+            "category_name": category_name,
+            "citizen_id": issue.citizen_id,
+            "citizen_name": citizen_name,
+            "status": issue.status,
+            "priority": issue.priority,
+            "priority_score": issue.priority_score,
+            "priority_is_overridden": issue.priority_is_overridden,
+            "address": issue.address,
+            "created_at": issue.created_at,
+            "updated_at": issue.updated_at,
+        }
+        for issue, category_name, citizen_name in rows
+    ]
+
+    total_pages = (total + page_size - 1) // page_size if total > 0 else 0
+
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": total_pages,
     }

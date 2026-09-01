@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import Enum
 
 from pydantic import BaseModel, Field
 
@@ -106,3 +107,43 @@ class DashboardStatsResponse(BaseModel):
     priority_counts: list[PriorityCount]
     category_counts: list[CategoryCount]
     monthly_trend: list[MonthlyCount]
+
+
+# --- Admin issue management (Phase 7, Package 3) ---
+
+
+class IssueSortOption(str, Enum):
+    newest = "newest"
+    oldest = "oldest"
+    priority_score = "priority_score"
+
+
+class IssueListItemResponse(BaseModel):
+    """Lighter than IssueResponse — a table row doesn't need images or full
+    description, but does need the category/citizen names already resolved
+    so the frontend never has to join client-side."""
+
+    id: int
+    title: str
+    category_id: int
+    category_name: str
+    citizen_id: int
+    citizen_name: str
+    status: IssueStatus
+    priority: PriorityLevel
+    priority_score: int
+    priority_is_overridden: bool
+    address: str | None
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class IssueListResponse(BaseModel):
+    items: list[IssueListItemResponse]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int

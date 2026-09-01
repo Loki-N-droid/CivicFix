@@ -1,5 +1,11 @@
 import api from './api'
-import type { CreateIssuePayload, DashboardStats, Issue } from '../types/issue'
+import type {
+  AdminIssueListParams,
+  CreateIssuePayload,
+  DashboardStats,
+  Issue,
+  IssueListResponse,
+} from '../types/issue'
 
 export async function createIssue(payload: CreateIssuePayload): Promise<Issue> {
   const form = new FormData()
@@ -27,5 +33,14 @@ export async function createIssue(payload: CreateIssuePayload): Promise<Issue> {
 
 export async function fetchDashboardStats(): Promise<DashboardStats> {
   const { data } = await api.get<DashboardStats>('/api/v1/issues/admin/stats')
+  return data
+}
+
+export async function fetchAdminIssues(
+  params: AdminIssueListParams,
+): Promise<IssueListResponse> {
+  const { data } = await api.get<IssueListResponse>('/api/v1/issues/admin/list', {
+    params,
+  })
   return data
 }

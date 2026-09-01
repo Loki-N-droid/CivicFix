@@ -1,16 +1,20 @@
-from fastapi import APIRouter, Depends, UploadFile, File, Form
+from datetime import datetime
+
+from fastapi import APIRouter, Depends, UploadFile, File, Form, Query
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.core.dependencies import get_current_user, require_admin
 from app.models.user import User
-from app.models.issue import IssueSeverity
+from app.models.issue import IssueSeverity, IssueStatus, PriorityLevel
 from app.schemas.issue import (
     IssueCreateRequest,
     IssueResponse,
     IssueDetailResponse,
     PriorityOverrideRequest,
     DashboardStatsResponse,
+    IssueListResponse,
+    IssueSortOption,
 )
 from app.services.issue_service import (
     create_issue,
@@ -19,6 +23,7 @@ from app.services.issue_service import (
     get_issue_for_admin,
     override_priority,
     get_dashboard_stats,
+    list_issues_for_admin,
 )
 
 router = APIRouter(prefix="/api/v1/issues", tags=["issues"])
@@ -82,6 +87,37 @@ def get_admin_dashboard_stats(
     declaration order, and 'stats' would otherwise be swallowed as an
     issue_id path param and fail int validation."""
     return get_dashboard_stats(db)
+
+
+@router.get("/admin/list", response_model=IssueListResponse)
+def list_issues_admin(
+    search: str | None = Query(default=None, description="Matches issue ID, title, or description."),
+    status: IssueStatus | None = Query(default=None),
+    category_id: int | None = Query(default=None),
+    priority: PriorityLevel | None = Query(default=None),
+    date_from: datetime | None = Query(default=None),
+    date_to: datetime | None = Query(default=None),
+    sort: IssueSortOption = Query(default=IssueSortOption.newest),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
+):
+    """Registered before /admin/{issue_id} — FastAPI matches routes in
+    declaration order, and 'list' would otherwise be swallowed as an
+    issue_id path param and fail int validation."""
+    return list_issues_for_admin(
+        db,
+        search=search,
+        status_filter=status,
+        category_id=category_id,
+        priority=priority,
+        date_from=date_from,
+        date_to=date_to,
+        sort=sort,
+        page=page,
+        page_size=page_size,
+    )
 
 
 @router.get("/admin/{issue_id}", response_model=IssueDetailResponse)

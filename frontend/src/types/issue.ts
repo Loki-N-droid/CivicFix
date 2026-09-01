@@ -79,3 +79,43 @@ export type CreateIssuePayload = {
   address?: string | null
   images: File[]
 }
+
+// --- Admin issue management ---
+
+export type IssueSortOption = 'newest' | 'oldest' | 'priority_score'
+
+export type IssueListItem = {
+  id: number
+  title: string
+  category_id: number
+  category_name: string
+  citizen_id: number
+  citizen_name: string
+  status: IssueStatus
+  priority: PriorityLevel
+  priority_score: number
+  priority_is_overridden: boolean
+  address: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type IssueListResponse = {
+  items: IssueListItem[]
+  total: number
+  page: number
+  page_size: number
+  total_pages: number
+}
+
+export type AdminIssueListParams = {
+  search?: string
+  status?: IssueStatus
+  category_id?: number
+  priority?: PriorityLevel
+  date_from?: string
+  date_to?: string
+  sort?: IssueSortOption
+  page?: number
+  page_size?: number
+}
