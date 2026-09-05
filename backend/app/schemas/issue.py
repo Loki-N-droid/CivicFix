@@ -24,6 +24,15 @@ class PriorityOverrideRequest(BaseModel):
     reason: str = Field(min_length=3, max_length=255)
 
 
+class StatusUpdateRequest(BaseModel):
+    """Admin-only payload for transitioning an issue's status. A remark is
+    mandatory — it's the accountability trail for the change and is stored
+    on the resulting IssueStatusHistory row."""
+
+    new_status: IssueStatus
+    remark: str = Field(min_length=3, max_length=500)
+
+
 class IssueImageResponse(BaseModel):
     id: int
     filename: str

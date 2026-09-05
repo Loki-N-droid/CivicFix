@@ -26,10 +26,10 @@ export default function RegisterPage() {
 
     try {
       await register({
-        full_name: fullName.trim(),
-        email: email.trim(),
-        password,
-      })
+	name: fullName.trim(),
+ 	email: email.trim(),
+ 	password,
+	})
 
       // Register creates the account; login obtains the JWT used by the frontend.
       await login({ email: email.trim(), password })

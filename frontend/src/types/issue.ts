@@ -137,3 +137,8 @@ export type IssueAdminDetail = Issue & {
   citizen_email: string
   status_history: StatusHistoryEntry[]
 }
+
+export type StatusUpdatePayload = {
+  new_status: IssueStatus
+  remark: string
+}

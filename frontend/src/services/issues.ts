@@ -6,6 +6,7 @@ import type {
   Issue,
   IssueAdminDetail,
   IssueListResponse,
+  StatusUpdatePayload,
 } from '../types/issue'
 
 export async function createIssue(payload: CreateIssuePayload): Promise<Issue> {
@@ -48,5 +49,16 @@ export async function fetchAdminIssues(
 
 export async function fetchAdminIssueDetail(issueId: number): Promise<IssueAdminDetail> {
   const { data } = await api.get<IssueAdminDetail>(`/api/v1/issues/admin/${issueId}`)
+  return data
+}
+
+export async function updateIssueStatus(
+  issueId: number,
+  payload: StatusUpdatePayload,
+): Promise<IssueAdminDetail> {
+  const { data } = await api.patch<IssueAdminDetail>(
+    `/api/v1/issues/admin/${issueId}/status`,
+    payload,
+  )
   return data
 }

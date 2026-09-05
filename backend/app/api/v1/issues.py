@@ -13,6 +13,7 @@ from app.schemas.issue import (
     IssueDetailResponse,
     IssueAdminDetailResponse,
     PriorityOverrideRequest,
+    StatusUpdateRequest,
     DashboardStatsResponse,
     IssueListResponse,
     IssueSortOption,
@@ -24,6 +25,7 @@ from app.services.issue_service import (
     get_issue_for_admin,
     get_issue_for_admin_detail,
     override_priority,
+    update_issue_status,
     get_dashboard_stats,
     list_issues_for_admin,
 )
@@ -141,3 +143,17 @@ def override_issue_priority(
     """Overrides the displayed priority for an issue. The system-calculated
     priority_score is never touched — see issue_service.override_priority."""
     return override_priority(db, issue_id=issue_id, admin_id=admin.id, override=payload)
+
+
+@router.patch("/admin/{issue_id}/status", response_model=IssueAdminDetailResponse)
+def update_issue_status_admin(
+    issue_id: int,
+    payload: StatusUpdateRequest,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
+):
+    """Admin-only status transition. Rejects no-op (same-status) updates and
+    requires a meaningful remark (enforced by StatusUpdateRequest) — see
+    issue_service.update_issue_status for the full transition/history/
+    resolved_at behavior."""
+    return update_issue_status(db, issue_id=issue_id, admin_id=admin.id, payload=payload)

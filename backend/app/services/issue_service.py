@@ -9,7 +9,12 @@ from app.models.issue_history import IssueStatusHistory
 from app.models.category import IssueCategory
 from app.models.image import IssueImage
 from app.models.user import User
-from app.schemas.issue import IssueCreateRequest, PriorityOverrideRequest, IssueSortOption
+from app.schemas.issue import (
+    IssueCreateRequest,
+    PriorityOverrideRequest,
+    IssueSortOption,
+    StatusUpdateRequest,
+)
 from app.services.priority_service import calculate_priority
 from app.services.storage_service import storage_service
 from app.utils.image_validation import validate_image_file, validate_image_count
@@ -162,6 +167,65 @@ def override_priority(
 
     db.commit()
     db.refresh(issue)
+    return issue
+
+
+def update_issue_status(
+    db: Session,
+    issue_id: int,
+    admin_id: int,
+    payload: StatusUpdateRequest,
+) -> Issue:
+    """Admin-only status transition.
+
+    Rejects a request that doesn't actually change the status (a same-status
+    "update" would create a meaningless audit row). On every real change it
+    appends a new, append-only IssueStatusHistory row — previous_status,
+    new_status, remark, and the responsible admin are all preserved; nothing
+    is overwritten or deleted from history.
+
+    resolved_at reflects the point at which the issue *most recently*
+    became resolved: it's set when the new status is `resolved`, and
+    cleared when a previously-resolved issue moves to anything else.
+    """
+    issue = get_issue_for_admin(db, issue_id)
+
+    if payload.new_status == issue.status:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Issue is already in this status.",
+        )
+
+    previous_status = issue.status
+    issue.status = payload.new_status
+
+    if payload.new_status == IssueStatus.resolved:
+        issue.resolved_at = datetime.now(timezone.utc)
+    elif previous_status == IssueStatus.resolved:
+        issue.resolved_at = None
+
+    db.add(
+        IssueStatusHistory(
+            issue_id=issue.id,
+            previous_status=previous_status,
+            new_status=payload.new_status,
+            remark=payload.remark,
+            updated_by=admin_id,
+        )
+    )
+
+    db.commit()
+    db.refresh(issue)
+
+    # Re-attach admin-detail fields (category/citizen names) the same way
+    # get_issue_for_admin_detail does, so the route can return the same
+    # IssueAdminDetailResponse shape the frontend already renders.
+    category = db.query(IssueCategory).filter(IssueCategory.id == issue.category_id).first()
+    citizen = db.query(User).filter(User.id == issue.citizen_id).first()
+    issue.category_name = category.name if category else "Unknown category"
+    issue.citizen_name = citizen.name if citizen else "Unknown citizen"
+    issue.citizen_email = citizen.email if citizen else ""
+
     return issue
 
 

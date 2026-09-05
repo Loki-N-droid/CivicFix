@@ -3,7 +3,7 @@ export type UserRole = 'citizen' | 'admin'
 export type User = {
   id: number
   email: string
-  full_name: string
+  name: string
   role: UserRole
 }
 
@@ -13,9 +13,9 @@ export type LoginRequest = {
 }
 
 export type RegisterRequest = {
+  name: string
   email: string
   password: string
-  full_name: string
 }
 
 export type TokenResponse = {
