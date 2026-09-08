@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import ProtectedRoute from './components/ProtectedRoute'
 import AdminRoute from './components/AdminRoute'
 import AdminLayout from './layouts/AdminLayout'
+import CitizenLayout from './layouts/CitizenLayout'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import ReportIssuePage from './pages/ReportIssuePage'
@@ -9,6 +10,7 @@ import AdminDashboardPage from './pages/admin/AdminDashboardPage'
 import AdminIssuesPage from './pages/admin/AdminIssuesPage'
 import AdminIssueDetailPage from './pages/admin/AdminIssueDetailPage'
 import AdminCategoriesPage from './pages/admin/AdminCategoriesPage'
+import IssueDetailPage from './pages/IssueDetailPage'
 
 function App() {
   return (
@@ -19,7 +21,10 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
 
         <Route element={<ProtectedRoute />}>
-          <Route path="/report" element={<ReportIssuePage />} />
+          <Route element={<CitizenLayout />}>
+            <Route path="/report" element={<ReportIssuePage />} />
+            <Route path="/issues/:id" element={<IssueDetailPage />} />
+          </Route>
         </Route>
 
         <Route element={<AdminRoute />}>

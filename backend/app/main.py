@@ -5,6 +5,7 @@ from app.api.v1.auth import router as auth_router
 from app.api.v1.categories import router as categories_router
 from app.api.v1.issues import router as issues_router
 from app.api.v1.images import router as images_router
+from app.api.v1.notifications import router as notifications_router
 
 app = FastAPI(title="CivicFix API", version="0.1.0")
 
@@ -23,6 +24,7 @@ app.include_router(auth_router)
 app.include_router(categories_router)
 app.include_router(issues_router)
 app.include_router(images_router)
+app.include_router(notifications_router)
 
 
 @app.get("/api/v1/health")

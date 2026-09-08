@@ -31,6 +31,11 @@ export async function createIssue(payload: CreateIssuePayload): Promise<Issue> {
   return data
 }
 
+export async function fetchIssueDetail(issueId: number): Promise<Issue> {
+  const { data } = await api.get<Issue>(`/api/v1/issues/${issueId}`)
+  return data
+}
+
 // --- Admin ---
 
 export async function fetchDashboardStats(): Promise<DashboardStats> {

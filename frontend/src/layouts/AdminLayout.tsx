@@ -63,7 +63,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
     navigate('/login', { replace: true })
   }
 
-  const initial = (user?.full_name?.trim()?.[0] ?? user?.email?.[0] ?? 'A').toUpperCase()
+  const initial = (user?.name?.trim()?.[0] ?? user?.email?.[0] ?? 'A').toUpperCase()
 
   return (
     <div className="flex h-full flex-col bg-slate-950 text-slate-300">
@@ -106,7 +106,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-slate-100">
-              {user?.full_name ?? 'Administrator'}
+              {user?.name ?? 'Administrator'}
             </p>
             <p className="truncate text-xs text-slate-500">{user?.email}</p>
           </div>

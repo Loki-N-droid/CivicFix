@@ -142,3 +142,8 @@ export type StatusUpdatePayload = {
   new_status: IssueStatus
   remark: string
 }
+
+export type PriorityOverridePayload = {
+  priority: PriorityLevel
+  reason: string
+}

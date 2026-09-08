@@ -2,15 +2,22 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { isAxiosError } from 'axios'
 import { Link, useParams } from 'react-router-dom'
-import { fetchAdminIssueDetail, updateIssueStatus } from '../../services/issues'
+import { fetchAdminIssueDetail, overrideIssuePriority, updateIssueStatus } from '../../services/issues'
 import StatusBadge from '../../components/admin/StatusBadge'
 import PriorityBadge from '../../components/admin/PriorityBadge'
 import AuthenticatedImage from '../../components/admin/AuthenticatedImage'
 import IssueLocationMap from '../../components/admin/IssueLocationMap'
 import { STATUS_LABELS } from '../../components/admin/chartTheme'
-import type { IssueStatus } from '../../types/issue'
+import type { IssueStatus, PriorityLevel } from '../../types/issue'
 
 const ALL_STATUSES = Object.keys(STATUS_LABELS) as IssueStatus[]
+const ALL_PRIORITIES: PriorityLevel[] = ['low', 'medium', 'high', 'critical']
+const PRIORITY_LABELS: Record<PriorityLevel, string> = {
+  low: 'Low',
+  medium: 'Medium',
+  high: 'High',
+  critical: 'Critical',
+}
 
 function BackArrowIcon() {
   return (
@@ -149,6 +156,51 @@ function StatusUpdateForm({ issueId, currentStatus }: { issueId: number; current
   )
 }
 
+function PriorityOverrideForm({ issueId, currentPriority }: { issueId: number; currentPriority: PriorityLevel }) {
+  const queryClient = useQueryClient()
+  const [priority, setPriority] = useState<PriorityLevel>(currentPriority)
+  const [reason, setReason] = useState('')
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const mutation = useMutation({
+    mutationFn: () => overrideIssuePriority(issueId, { priority, reason: reason.trim() }),
+    onSuccess: () => {
+      setSuccessMessage('Priority override saved.')
+      setReason('')
+      queryClient.invalidateQueries({ queryKey: ['admin', 'issue-detail', issueId] })
+      queryClient.invalidateQueries({ queryKey: ['admin', 'issues'] })
+      queryClient.invalidateQueries({ queryKey: ['admin', 'dashboard-stats'] })
+    },
+  })
+  const canSubmit = reason.trim().length >= 3 && !mutation.isPending
+  const errorMessage = mutation.isError
+    ? isAxiosError(mutation.error) && typeof mutation.error.response?.data?.detail === 'string'
+      ? mutation.error.response.data.detail
+      : "Couldn't override the priority. Please try again."
+    : null
+
+  function handleSubmit(event: React.FormEvent) {
+    event.preventDefault()
+    setSuccessMessage(null)
+    if (canSubmit) mutation.mutate()
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <label className="flex flex-col gap-1 text-xs font-medium text-slate-500">New priority
+        <select value={priority} onChange={(event) => { setPriority(event.target.value as PriorityLevel); setSuccessMessage(null) }} disabled={mutation.isPending} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-500 focus:outline-none">
+          {ALL_PRIORITIES.map((level) => <option key={level} value={level}>{PRIORITY_LABELS[level]}</option>)}
+        </select>
+      </label>
+      <label className="flex flex-col gap-1 text-xs font-medium text-slate-500">Override reason
+        <textarea value={reason} onChange={(event) => { setReason(event.target.value); setSuccessMessage(null) }} rows={3} maxLength={255} placeholder="Explain why the calculated priority should change (required)" disabled={mutation.isPending} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-500 focus:outline-none" />
+      </label>
+      {errorMessage ? <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">{errorMessage}</div> : null}
+      {successMessage ? <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-700">{successMessage}</div> : null}
+      <button type="submit" disabled={!canSubmit} className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50">{mutation.isPending ? 'Saving…' : 'Override priority'}</button>
+    </form>
+  )
+}
+
 function DetailSkeleton() {
   return (
     <div className="space-y-6">
@@ -280,6 +332,9 @@ export default function AdminIssueDetailPage() {
 
             <DetailCard title="Update status">
               <StatusUpdateForm issueId={issue.id} currentStatus={issue.status} />
+            </DetailCard>
+            <DetailCard title="Override priority">
+              <PriorityOverrideForm issueId={issue.id} currentPriority={issue.priority} />
             </DetailCard>
           </div>
         </>

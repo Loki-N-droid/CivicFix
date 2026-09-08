@@ -39,7 +39,7 @@ function ChartsSkeleton() {
 
 export default function AdminDashboardPage() {
   const { user } = useAuth()
-  const firstName = user?.full_name?.trim()?.split(' ')[0]
+  const firstName = user?.name?.trim()?.split(' ')[0]
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['admin', 'dashboard-stats'],

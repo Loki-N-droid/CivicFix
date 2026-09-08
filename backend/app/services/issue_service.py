@@ -9,6 +9,7 @@ from app.models.issue_history import IssueStatusHistory
 from app.models.category import IssueCategory
 from app.models.image import IssueImage
 from app.models.user import User
+from app.models.notification import Notification, NotificationType
 from app.schemas.issue import (
     IssueCreateRequest,
     PriorityOverrideRequest,
@@ -211,6 +212,25 @@ def update_issue_status(
             new_status=payload.new_status,
             remark=payload.remark,
             updated_by=admin_id,
+        )
+    )
+
+    notification_type = (
+        NotificationType.issue_resolved
+        if payload.new_status == IssueStatus.resolved
+        else NotificationType.issue_status_updated
+    )
+    db.add(
+        Notification(
+            user_id=issue.citizen_id,
+            issue_id=issue.id,
+            title="Issue Resolved" if notification_type == NotificationType.issue_resolved else "Issue Status Updated",
+            message=(
+                f'Your reported issue "{issue.title}" has been moved to '
+                f"{payload.new_status.value.replace('_', ' ').title()}. "
+                f"Remark: {payload.remark}"
+            ),
+            notification_type=notification_type,
         )
     )
 
