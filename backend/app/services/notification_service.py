@@ -10,14 +10,29 @@ from app.models.notification import Notification
 def list_notifications(
     db: Session, user_id: int, page: int, page_size: int
 ) -> tuple[list[dict], int]:
-    query = (
+
+    # Separate base query for counting notifications
+    total = (
+        db.query(func.count(Notification.id))
+        .filter(Notification.user_id == user_id)
+        .scalar()
+        or 0
+    )
+
+    # Query notifications separately
+    rows = (
         db.query(Notification, Issue.title.label("issue_title"))
         .outerjoin(Issue, Notification.issue_id == Issue.id)
         .filter(Notification.user_id == user_id)
-        .order_by(Notification.created_at.desc(), Notification.id.desc())
+        .order_by(
+            Notification.created_at.desc(),
+            Notification.id.desc(),
+        )
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+        .all()
     )
-    total = query.with_entities(func.count(Notification.id)).scalar() or 0
-    rows = query.offset((page - 1) * page_size).limit(page_size).all()
+
     items = [
         {
             "id": notification.id,
@@ -32,33 +47,59 @@ def list_notifications(
         }
         for notification, issue_title in rows
     ]
+
     return items, total
 
 
 def get_unread_count(db: Session, user_id: int) -> int:
     return (
         db.query(func.count(Notification.id))
-        .filter(Notification.user_id == user_id, Notification.is_read.is_(False))
+        .filter(
+            Notification.user_id == user_id,
+            Notification.is_read.is_(False),
+        )
         .scalar()
         or 0
     )
 
 
-def mark_as_read(db: Session, notification: Notification) -> Notification:
+def mark_as_read(
+    db: Session,
+    notification: Notification,
+) -> Notification:
+
     if not notification.is_read:
         notification.is_read = True
         notification.read_at = datetime.now(timezone.utc)
+
         db.commit()
         db.refresh(notification)
+
     return notification
 
 
-def mark_all_as_read(db: Session, user_id: int) -> int:
+def mark_all_as_read(
+    db: Session,
+    user_id: int,
+) -> int:
+
     now = datetime.now(timezone.utc)
+
     updated = (
         db.query(Notification)
-        .filter(Notification.user_id == user_id, Notification.is_read.is_(False))
-        .update({Notification.is_read: True, Notification.read_at: now}, synchronize_session=False)
+        .filter(
+            Notification.user_id == user_id,
+            Notification.is_read.is_(False),
+        )
+        .update(
+            {
+                Notification.is_read: True,
+                Notification.read_at: now,
+            },
+            synchronize_session=False,
+        )
     )
+
     db.commit()
+
     return updated

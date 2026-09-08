@@ -6,6 +6,7 @@ import type {
   Issue,
   IssueAdminDetail,
   IssueListResponse,
+  PriorityOverridePayload,
   StatusUpdatePayload,
 } from '../types/issue'
 
@@ -63,6 +64,17 @@ export async function updateIssueStatus(
 ): Promise<IssueAdminDetail> {
   const { data } = await api.patch<IssueAdminDetail>(
     `/api/v1/issues/admin/${issueId}/status`,
+    payload,
+  )
+  return data
+}
+
+export async function overrideIssuePriority(
+  issueId: number,
+  payload: PriorityOverridePayload,
+): Promise<IssueAdminDetail> {
+  const { data } = await api.patch<IssueAdminDetail>(
+    `/api/v1/issues/admin/${issueId}/priority`,
     payload,
   )
   return data
