@@ -90,6 +90,13 @@ export default function LoginPage() {
             Create one
           </Link>
         </p>
+
+        <Link
+          className="mt-4 block rounded-lg border border-slate-300 px-4 py-2.5 text-center text-sm font-medium text-slate-700 hover:bg-slate-50"
+          to="/admin"
+        >
+          Administrator access
+        </Link>
       </div>
     </div>
   )

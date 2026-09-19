@@ -11,7 +11,12 @@ from app.models.notification import Notification, NotificationType
 from app.models.user import User, UserRole
 from app.schemas.issue import StatusUpdateRequest
 from app.services.issue_service import update_issue_status
-from app.services.notification_service import get_unread_count, mark_all_as_read, mark_as_read
+from app.services.notification_service import (
+    get_unread_count,
+    list_notifications,
+    mark_all_as_read,
+    mark_as_read,
+)
 
 
 @pytest.fixture
@@ -99,3 +104,44 @@ def test_unread_count_and_read_all_are_scoped_to_user(db: Session):
     other_notification = db.query(Notification).filter(Notification.user_id == other.id).one()
     mark_as_read(db, other_notification)
     assert other_notification.is_read is True
+
+
+def test_notification_listing_is_scoped_ordered_and_paginated(db: Session):
+    admin, issue = seed_issue(db)
+    other = User(name="Other", email="other-list@example.com", password_hash="hash", role=UserRole.citizen)
+    db.add(other)
+    db.flush()
+    first = Notification(
+        user_id=issue.citizen_id,
+        issue_id=issue.id,
+        title="First",
+        message="First message",
+        notification_type=NotificationType.issue_status_updated,
+    )
+    second = Notification(
+        user_id=issue.citizen_id,
+        issue_id=issue.id,
+        title="Second",
+        message="Second message",
+        notification_type=NotificationType.issue_resolved,
+    )
+    db.add_all([
+        first,
+        second,
+        Notification(
+            user_id=other.id,
+            issue_id=issue.id,
+            title="Other",
+            message="Other message",
+            notification_type=NotificationType.issue_status_updated,
+        ),
+    ])
+    db.commit()
+
+    items, total = list_notifications(db, issue.citizen_id, page=1, page_size=1)
+
+    assert total == 2
+    assert len(items) == 1
+    assert items[0]["id"] == second.id
+    assert items[0]["issue_title"] == issue.title
+    assert items[0]["title"] == "Second"
