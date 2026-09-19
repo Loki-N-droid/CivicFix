@@ -5,7 +5,7 @@ export type AuthContextValue = {
   user: User | null
   isLoading: boolean
   isAuthenticated: boolean
-  login: (payload: LoginRequest) => Promise<void>
+  login: (payload: LoginRequest) => Promise<User>
   register: (payload: RegisterRequest) => Promise<void>
   logout: () => void
 }

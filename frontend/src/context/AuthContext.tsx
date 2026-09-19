@@ -33,6 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (payload: LoginRequest) => {
     const response = await loginRequest(payload)
     setUser(response.user)
+    return response.user
   }, [])
 
   const register = useCallback(async (payload: RegisterRequest) => {

@@ -20,8 +20,11 @@ export default function LoginPage() {
     setIsSubmitting(true)
 
     try {
-      await login({ email: email.trim(), password })
-      navigate(from, { replace: true })
+      const authenticatedUser = await login({ email: email.trim(), password })
+      navigate(
+        authenticatedUser.role === 'admin' ? '/admin/dashboard' : from,
+        { replace: true },
+      )
     } catch (err) {
       if (isAxiosError(err)) {
         const detail = err.response?.data?.detail
@@ -90,13 +93,6 @@ export default function LoginPage() {
             Create one
           </Link>
         </p>
-
-        <Link
-          className="mt-4 block rounded-lg border border-slate-300 px-4 py-2.5 text-center text-sm font-medium text-slate-700 hover:bg-slate-50"
-          to="/admin"
-        >
-          Administrator access
-        </Link>
       </div>
     </div>
   )
